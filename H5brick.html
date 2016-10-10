@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+	#scene{
+		border: 2px solid #aaa;
+		display: block;
+		margin:0 auto;
+	}
+	</style>
+</head>
+<body>
+	<canvas id="scene"width="800"height="600"></canvas>
+	<script>
+	var cvs = document.getElementById('scene')
+	var ctx = cvs.getContext('2d')
+	var bricks ={
+		row : 4,
+		col : 5,
+		colors : ['#9d9d9d', '#f80207', '#feff01', '#0072ff', '#fc01fc', '#03fe03'],
+		arr:[], 
+		h : 20
+	}
+
+	var ball ={
+		x : 400,
+		y : 550,
+		r : 20,
+		xdrc : 0.5,  //X方向与速度
+		ydrc : -5    //Y方向与速度
+	}
+	var bar ={
+		x : 330,
+		y : 570,
+		w : 140,
+		h : 22
+	}
+	
+	function draw(){
+		clear()
+		//draw bricks
+		bricks.w = Math.floor(ctx.canvas.width/bricks.col)
+			if(ctx.canvas.width%bricks.col == 0){
+				 pad = 2
+				bricks.w = bricks.w-pad-(1/bricks.col)
+			}else{
+				pad = Math.ceil(ctx.canvas.width%bricks.col/bricks.col)
+				bricks.w = bricks.w-pad
+			}
+			ctx.fillStyle="red"
+
+			for(var i=0;i<bricks.row;i++){
+				ctx.fillStyle = bricks.colors[i]
+				for(var j=0;j<bricks.col;j++){
+					if(!bricks.arr[i][j]) continue      //与collision判断配合，决定哪一行哪一列是否该显示
+					ctx.fillRect( ((j+1)*pad)+(j*bricks.w),(i+1)*pad+i*bricks.h,bricks.w,bricks.h)
+					
+				}
+			}
+
+		//draw bar
+		ctx.fillStyle="blue"
+		ctx.fillRect(bar.x,bar.y,bar.w,bar.h)
+		//draw ball
+		ctx.beginPath()
+		ctx.arc(ball.x,ball.y,ball.r,0,2*Math.PI)
+		ctx.fillStyle="red"
+		ctx.closePath()
+		ctx.stroke()
+		ctx.fill()
+		//check collision						
+		brickH = bricks.h + pad           //一个brick的高
+		brickW = bricks.w + pad
+    	iRow = Math.floor((ball.y-ball.r)/ brickH)   //floor 向下取整 对于行 利用球的ball.y判断行 ：当ball.y-ball.r也就是球的上边的y坐标，小于等于一个brickH，则iRow等于0，小于等于两个brickH，则iRow等于1···
+    	iCol = Math.floor(ball.x / brickW)			//利用球的ball.x判断列 : 当ball.x小于等于一个brickW 则iCol等于0···
+    	if ((ball.y-ball.r) < bricks.row * brickH && iRow >= 0 && iCol >= 0 && bricks.arr[iRow][iCol] == 1) {
+        bricks.arr[iRow][iCol] = 0
+        ball.ydrc = -ball.ydrc
+        
+    }
+    	//roll 
+		if (ball.x + ball.xdrc + ball.r > ctx.canvas.width || ball.x + ball.xdrc - ball.r < 0) { //如果撞到两边
+        	ball.xdrc = -ball.xdrc
+   		}
+
+    	if (ball.y  - ball.r < 0) {   //如果撞到上边
+       		ball.ydrc = -ball.ydrc
+		} else if(ball.y+ball.r>570&&ball.x<(bar.w+bar.x)&&ball.x>(bar.x)){ //如果撞到 bar 
+			 ball.ydrc = -ball.ydrc
+			 if(ball.x<bar.x+bar.w/4){			// 1/4 向左快速弹
+				ball.xdrc= -5
+			} else if(ball.x>bar.x+3*bar.w/4){	// 3/4 向右快速弹
+				ball.xdrc= 5
+			} else if(ball.x>bar.x+2*bar.w/4){	// 2/4 慢速向左弹
+				ball.xdrc= 0.5
+			} else if(ball.x>bar.x+bar.w/4){	// 3/4 慢速向右弹						
+				ball.xdrc= -0.5
+			}
+
+		}else if(ball.y+ball.r==600){  //如果没接住
+			clearInterval(startGame)
+		}
+	ball.x += ball.xdrc
+    ball.y += ball.ydrc
+}
+	function clear(){
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    	ctx.fillStyle = '#111'
+    	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+	}
+	window.onload = function(){
+		ctx.font="30px Arial"
+		ctx.fillText('点击鼠标左键开始',320,300)
+		var start = false
+		document.documentElement.onclick=function(){
+			start = !start
+			if(start) startGame = setInterval(draw,10)
+			if(!start)	clearInterval(startGame)
+		}
+		document.getElementById('scene').onmousemove=function(event){
+			bar.x = event.offsetX
+			if(bar.x>ctx.canvas.width-bar.w) bar.x=ctx.canvas.width-bar.w
+		}
+		
+		for(var i=0;i<bricks.row;i++){
+			bricks.arr[i]=[]
+			for(var j=0;j<bricks.col;j++){
+				bricks.arr[i][j]=1
+				}
+			}
+		}
+		
+	
+	</script>
+</body>
+</html>
